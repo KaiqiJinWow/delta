@@ -481,7 +481,13 @@ public class ColumnMapping {
       String physicalName;
       if (useColumnIdForPhysicalName) {
         long columnId = getColumnId(field);
-        physicalName = String.format("col%s", columnId);
+        if (columnId == 2147483540L) {
+          physicalName = "__row_id_metadata_col";
+        } else if (columnId == 2147483539L) {
+          physicalName = "__row_commit_version_metadata_col";
+        } else {
+          physicalName = String.format("col-%s", columnId);
+        }
       } else {
         physicalName = isNewTable ? "col-" + UUID.randomUUID() : field.getName();
       }

@@ -229,7 +229,7 @@ public class IcebergWriterCompatV1MetadataValidatorAndUpdater
                 field -> {
                   String physicalName = ColumnMapping.getPhysicalName(field);
                   long columnId = ColumnMapping.getColumnId(field);
-                  return !physicalName.equals(String.format("col%s", columnId));
+                  return !physicalName.equals(String.format("col-%s", columnId));
                 });
         if (!invalidFields.isEmpty()) {
           List<String> invalidFieldsFormatted =
