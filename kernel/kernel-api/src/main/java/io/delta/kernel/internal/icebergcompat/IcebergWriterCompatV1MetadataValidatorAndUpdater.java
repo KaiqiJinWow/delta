@@ -171,7 +171,8 @@ public class IcebergWriterCompatV1MetadataValidatorAndUpdater
               CLUSTERING_W_FEATURE,
               TIMESTAMP_NTZ_RW_FEATURE,
               TYPE_WIDENING_RW_FEATURE,
-              TYPE_WIDENING_PREVIEW_TABLE_FEATURE)
+              TYPE_WIDENING_PREVIEW_TABLE_FEATURE,
+              ROW_TRACKING_W_FEATURE)
           .collect(toSet());
 
   /** Checks that all features supported in the protocol are in {@link #ALLOWED_TABLE_FEATURES} */
@@ -228,7 +229,7 @@ public class IcebergWriterCompatV1MetadataValidatorAndUpdater
                 field -> {
                   String physicalName = ColumnMapping.getPhysicalName(field);
                   long columnId = ColumnMapping.getColumnId(field);
-                  return !physicalName.equals(String.format("col-%s", columnId));
+                  return !physicalName.equals(String.format("col%s", columnId));
                 });
         if (!invalidFields.isEmpty()) {
           List<String> invalidFieldsFormatted =

@@ -481,7 +481,7 @@ public class ColumnMapping {
       String physicalName;
       if (useColumnIdForPhysicalName) {
         long columnId = getColumnId(field);
-        physicalName = String.format("col-%s", columnId);
+        physicalName = String.format("col%s", columnId);
       } else {
         physicalName = isNewTable ? "col-" + UUID.randomUUID() : field.getName();
       }
