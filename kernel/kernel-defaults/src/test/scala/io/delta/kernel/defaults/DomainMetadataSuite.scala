@@ -26,6 +26,7 @@ import io.delta.kernel.exceptions._
 import io.delta.kernel.expressions.Literal
 import io.delta.kernel.internal.{SnapshotImpl, TableImpl, TransactionImpl}
 import io.delta.kernel.internal.actions.DomainMetadata
+import io.delta.kernel.internal.checksum.ChecksumReader
 import io.delta.kernel.internal.rowtracking.RowTrackingMetadataDomain
 import io.delta.kernel.utils.CloseableIterable
 import io.delta.kernel.utils.CloseableIterable.emptyIterable
@@ -61,7 +62,13 @@ class DomainMetadataSuite extends DeltaTableWriteSuiteBase with ParquetSuiteBase
       expectedValue: Map[String, DomainMetadata]): Unit = {
     // Get the latest snapshot of the table
     val snapshot = table.getLatestSnapshot(engine).asInstanceOf[SnapshotImpl]
-    assertDomainMetadata(snapshot, expectedValue)
+    // Loading from CRC will skip tombstone.
+    assertDomainMetadata(snapshot, expectedValue.filterNot(_._2.isRemoved))
+    // verifyChecksum will check the domain metadata in CRC against the lastest snapshot.
+    verifyChecksum(table.getPath(engine))
+    // Delete CRC and reload snapshot from log.
+    deleteChecksumFileForTable(table.getPath(engine), versions = Seq(snapshot.getVersion.toInt))
+    assertDomainMetadata(table.getLatestSnapshot(engine).asInstanceOf[SnapshotImpl], expectedValue)
   }
 
   private def createTxnWithDomainMetadatas(
@@ -180,11 +187,7 @@ class DomainMetadataSuite extends DeltaTableWriteSuiteBase with ParquetSuiteBase
       txn: Transaction,
       engine: Engine,
       dataActions: CloseableIterable[Row]): TransactionCommitResult = {
-    val result = txn.commit(engine, dataActions)
-    result.getPostCommitHooks
-      .stream()
-      .forEach(hook => hook.threadSafeInvoke(engine))
-    result
+    executeCrcSimple(txn.commit(engine, dataActions), engine)
   }
 
   test("create table w/o domain metadata") {
@@ -471,9 +474,9 @@ class DomainMetadataSuite extends DeltaTableWriteSuiteBase with ParquetSuiteBase
         val dm2 = new DomainMetadata("testDomain2", "", true)
         val dm3 = new DomainMetadata("testDomain3", "", false)
 
-        val snapshot = latestSnapshot(tablePath).asInstanceOf[SnapshotImpl]
         assertDomainMetadata(
-          snapshot,
+          Table.forPath(defaultEngine, tablePath),
+          defaultEngine,
           Map("testDomain1" -> dm1, "testDomain2" -> dm2, "testDomain3" -> dm3))
       }
     })

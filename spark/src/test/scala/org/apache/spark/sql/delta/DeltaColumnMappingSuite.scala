@@ -1969,13 +1969,8 @@ class DeltaColumnMappingSuite extends QueryTest
                |TBLPROPERTIES('${DeltaConfigs.COLUMN_MAPPING_MODE.key}'='none')
                |""".stripMargin)
         }
-        val condition = "DELTA_INVALID_CHARACTERS_IN_COLUMN_NAMES"
-        checkError(
-          e,
-          condition,
-          parameters = DeltaThrowableHelper
-            .getParameterNames(condition, errorSubClass = null)
-            .zip(invalidColumns).toMap
+        checkError(e, "DELTA_INVALID_CHARACTERS_IN_COLUMN_NAMES", "42K05",
+          Map("invalidColumnNames" -> invalidColumns.mkString(", "))
         )
       }
     }
@@ -2172,5 +2167,18 @@ class DeltaColumnMappingSuite extends QueryTest
         }
       }
     }
+  }
+
+  test("unit test physical name assigning is case-insensitive") {
+    val schema = new StructType()
+      .add("A", IntegerType)
+      .add("b", IntegerType)
+    val fieldPathToPhysicalName = Map(Seq("a") -> "x", Seq("b") -> "y")
+    val schemaWithPhysicalNames = DeltaColumnMapping.setPhysicalNames(
+      schema = schema,
+      fieldPathToPhysicalName = fieldPathToPhysicalName)
+    assert(DeltaColumnMapping.getLogicalNameToPhysicalNameMap(schemaWithPhysicalNames) === Map(
+      Seq("A") -> Seq("x"),
+      Seq("b") -> Seq("y")))
   }
 }

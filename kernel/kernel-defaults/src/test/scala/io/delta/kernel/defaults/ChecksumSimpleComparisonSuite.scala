@@ -124,6 +124,10 @@ class ChecksumSimpleComparisonSuite extends DeltaTableWriteSuiteBase with TestUt
         crcInfo.getProtocol,
         crcInfo.getTableSizeBytes,
         crcInfo.getNumFiles,
+        Optional.empty(),
+        // TODO: check domain metadata.
+        Optional.empty(),
+        // TODO: check file size histogram once https://github.com/delta-io/delta/pull/3907 merged.
         Optional.empty())
     }
   }
@@ -152,10 +156,6 @@ class ChecksumSimpleComparisonSuite extends DeltaTableWriteSuiteBase with TestUt
       .orElseThrow(() => new IllegalStateException(s"CRC info not found for version $version"))
   }
 
-  private def buildCrcPath(basePath: String, version: Long): java.nio.file.Path = {
-    new File(FileNames.checksumFile(new Path(f"$basePath/_delta_log"), version).toString).toPath
-  }
-
   // TODO docs
   private def commitSparkChangeToKernel(
       path: String,
@@ -165,6 +165,7 @@ class ChecksumSimpleComparisonSuite extends DeltaTableWriteSuiteBase with TestUt
 
     val txn = Table.forPath(engine, path)
       .createTransactionBuilder(engine, "test-engine", Operation.WRITE)
+      .withLogCompactionInverval(0) // disable compaction
       .build(engine)
 
     val tableChange = Table.forPath(engine, sparkTablePath).asInstanceOf[TableImpl].getChanges(
