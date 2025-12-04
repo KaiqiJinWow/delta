@@ -76,6 +76,10 @@ public interface UCClient extends AutoCloseable {
    *                    If present, the table's metadata will be updated atomically with the commit.
    * @param newProtocol An Optional containing a new protocol version to be applied to the table.
    *                    If present, the table's protocol will be updated atomically with the commit.
+   * @param catalogProperties Additional catalog-specific properties to be passed through to the
+   *                          UC server. These opaque key-value pairs may be used by specific UC
+   *                          client implementations as needed. The interpretation and usage of these
+   *                          properties is implementation-specific.
    * @throws IOException if there's an error during the commit process, such as network issues.
    * @throws CommitFailedException if the commit fails due to conflicts or other logical errors.
    * @throws UCCommitCoordinatorException if there's an error specific to the Unity Catalog
@@ -88,7 +92,8 @@ public interface UCClient extends AutoCloseable {
       Optional<Long> lastKnownBackfilledVersion,
       boolean disown,
       Optional<AbstractMetadata> newMetadata,
-      Optional<AbstractProtocol> newProtocol
+      Optional<AbstractProtocol> newProtocol,
+      java.util.Map<String, String> catalogProperties
   ) throws IOException, CommitFailedException, UCCommitCoordinatorException;
 
   /**
